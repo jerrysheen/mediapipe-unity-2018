@@ -1,5 +1,8 @@
 # MediaPipe Unity Plugin
-This is a Unity (2019.4.18f1) Plugin to use MediaPipe.
+This is a Unity (2019.4.18f1) Plugin to use MediaPipe.  
+The original algorithm was provided by GOOGLE/mediapipe  
+And thanks to @homuler to modify it and now it can Run on unity.  
+My priority mission is to run it on windows and do some easy gesture recognition job using landmark.  
 
 ## Platforms
 - [x] Linux Desktop (tested on ArchLinux)
