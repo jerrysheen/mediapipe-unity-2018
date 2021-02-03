@@ -1,6 +1,6 @@
 {
   "name": "mediapipeunityplugin-test-unity-2018",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "this is a project that using mediapipe to do hand detection and other detections in unity",
   "main": "index.js",
   "scripts": {

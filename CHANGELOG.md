@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/jerrysheen/mediapipe-unity-2018/compare/v1.0.0...v1.1.0) (2021-02-03)
+
+
+### Features
+
+* add changelog file for property: the forward update is by homuler ([768232f](https://github.com/jerrysheen/mediapipe-unity-2018/commit/768232f594f0d0d4884f570ae0652f07f26da8f0))
+
 ## 1.0.0 (2021-02-03)
 
 ### [0.4.1](https://github.com/homuler/MediapipeUnityPlugin/compare/v0.4.0...v0.4.1) (2021-01-17)
