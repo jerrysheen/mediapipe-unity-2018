@@ -3,7 +3,10 @@
 .vs/
 node_modules/
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 768232f594f0d0d4884f570ae0652f07f26da8f0
 
 Temp/
 Logs/

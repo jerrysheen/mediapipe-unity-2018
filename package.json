@@ -1,0 +1,23 @@
+{
+  "name": "mediapipeunityplugin-test-unity-2018",
+  "version": "1.0.0",
+  "description": "this is a project that using mediapipe to do hand detection and other detections in unity",
+  "main": "index.js",
+  "scripts": {
+    "release": "standard-version",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jerrysheen/mediapipe-unity-2018.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jerrysheen/mediapipe-unity-2018/issues"
+  },
+  "homepage": "https://github.com/jerrysheen/mediapipe-unity-2018#readme",
+  "devDependencies": {
+    "standard-version": "^9.1.0"
+  }
+}
