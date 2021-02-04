@@ -29,9 +29,14 @@ public class HandTrackingGraph : DemoGraph {
 
   private SidePacket sidePacket;
   public  HandTrackingValue handTrackingValue;
-  
+  private float originX;
+  private float originY;
+    private float originTime;
 
-  public override Status StartRun() {
+
+
+
+    public override Status StartRun() {
     handLandmarksStreamPoller = graph.AddOutputStreamPoller<List<NormalizedLandmarkList>>(handLandmarksStream).ConsumeValueOrDie();
     handLandmarksPacket = new NormalizedLandmarkListVectorPacket();
 
@@ -68,11 +73,31 @@ public class HandTrackingGraph : DemoGraph {
         if (handTrackingValue != null && handTrackingValue.PalmDetections != null && handTrackingValue.PalmDetections.Count > 0) {
             // blue color one...
             // 用最直接的方法，转成string以后截取里面的片段：
+            Queue<HandTrackingValue> idleOrMove = new Queue<HandTrackingValue>();
+            //
+            float currX = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Width +
+                (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Xmin/2;
+            float currY = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Height/2 +
+                (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Ymin;
+
+            if (Mathf.Abs(originX - currX) > 0.15 || Mathf.Abs(originY - currY) > 0.15)
+            {
+                Debug.Log("move");
+                Debug.Log(originX - currX);
+                Debug.Log(originY - currY);
+                originX = currX;
+                originY = currY;
+               // Debug.Log(Time.time * 10);
+            }
+            else{
+                Debug.Log("idle");
+
+            }
             string str = handTrackingValue.PalmDetections[0].ToString();
             float width = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Width;
             float height = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Height;
             if (width >= 0.15 && height >= 0.15) {
-                Debug.Log(str);
+                //Debug.Log(str);
             }
             //Debug.Log(handTrackingValue.PalmDetections[0].ToString());
             //Debug.Log(handTrackingValue.PalmDetections[0].ToString().Substring(5,15));
