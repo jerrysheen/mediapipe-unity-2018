@@ -2,6 +2,24 @@ using Mediapipe;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum handState
+{
+    idle,
+    move,
+    fist,
+    finger_spread_out,
+    outScreen
+}
+
+public enum moveDirection
+{
+    idle,
+    left,
+    right,
+    up,
+    down
+}
+
 public class HandTrackingGraph : DemoGraph {
   private const string handLandmarksStream = "hand_landmarks";
   private OutputStreamPoller<List<NormalizedLandmarkList>> handLandmarksStreamPoller;
@@ -32,8 +50,8 @@ public class HandTrackingGraph : DemoGraph {
   private float originX;
   private float originY;
     private float originTime;
-
-
+    private handState currState = handState.idle;
+    private moveDirection currDirection = moveDirection.idle;
 
 
     public override Status StartRun() {
@@ -70,38 +88,84 @@ public class HandTrackingGraph : DemoGraph {
   }
 
   public override string GetMark() {
-        if (handTrackingValue != null && handTrackingValue.PalmDetections != null && handTrackingValue.PalmDetections.Count > 0) {
+        // if detect hands change state machine.
+        Debug.Log(currDirection);
+        //Debug.Log(Time.time);
+        if (handTrackingValue != null && handTrackingValue.PalmDetections != null && handTrackingValue.PalmDetections.Count > 0)
+        {
             // blue color one...
-            // 用最直接的方法，转成string以后截取里面的片段：
+
             Queue<HandTrackingValue> idleOrMove = new Queue<HandTrackingValue>();
             //
-            float currX = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Width +
-                (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Xmin/2;
-            float currY = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Height/2 +
-                (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Ymin;
 
-            if (Mathf.Abs(originX - currX) > 0.15 || Mathf.Abs(originY - currY) > 0.15)
-            {
-                Debug.Log("move");
-                Debug.Log(originX - currX);
-                Debug.Log(originY - currY);
-                originX = currX;
-                originY = currY;
-               // Debug.Log(Time.time * 10);
-            }
-            else{
-                Debug.Log("idle");
-
-            }
-            string str = handTrackingValue.PalmDetections[0].ToString();
             float width = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Width;
             float height = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Height;
-            if (width >= 0.15 && height >= 0.15) {
-                //Debug.Log(str);
-            }
-            //Debug.Log(handTrackingValue.PalmDetections[0].ToString());
-            //Debug.Log(handTrackingValue.PalmDetections[0].ToString().Substring(5,15));
+
+            float currX = width / 2 + (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Xmin;
+            float currY = height / 2 + (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Ymin;
+
+            // the filter to remove noise rect...
+            if (width >= 0.15 && height >= 0.15)
+            {
+                if (currState == handState.move)
+                {
+                    if ((Time.time - originTime) > 5)
+                    {
+                        currState = handState.idle;
+                        originTime = Time.time;
+                        originX = currX;
+                        originY = currY;
+                        currDirection = moveDirection.idle;
+                    }
+                    else
+                    {
+                        //Debug.Log(Time.time - originTime);
+                    }
+                }
+                else if (currState == handState.idle)
+                {
+                    //Debug.Log("idle");
+                    float diffX = currX - originX;
+                    float diffY = currY - originY;
+                    if (Mathf.Abs(diffX) > 0.15 || Mathf.Abs(originY - currY) > 0.15)
+                    {
+                        currState = handState.move;
+                        originX = currX;
+                        originY = currY;
+                        originTime = Time.time;
+
+                        // define which derection it move...
+                        // first we just compare diff scale regrad horizontal and vertical...
+                        if (Mathf.Pow(diffX, 2) - Mathf.Pow(diffY, 2) > 0)
+                        {
+                            // x is larger.
+                            if (diffX > 0)
+                            {
+                                currDirection = moveDirection.right;
+                            }
+                            else
+                            {
+                                currDirection = moveDirection.left;
+                            }
+                        }
+                        else
+                        {
+                            if (diffY > 0)
+                            {
+                                currDirection = moveDirection.down;
+                            }
+                            else
+                            {
+                                currDirection = moveDirection.up;
+                            }
+                        }
+
+                    }
+                }
+
+            }  
         }
+
         if (handTrackingValue != null && handTrackingValue.HandLandmarkLists != null && handTrackingValue.HandLandmarkLists.Count > 0) {
             return handTrackingValue.HandLandmarkLists[0].ToString();
         }
