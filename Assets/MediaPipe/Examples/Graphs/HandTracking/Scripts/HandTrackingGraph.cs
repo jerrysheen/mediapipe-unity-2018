@@ -50,7 +50,10 @@ public class HandTrackingGraph : DemoGraph
 
     private SidePacket sidePacket;
     public HandTrackingValue handTrackingValue;
-    private float freeze_time = 3;
+    private const float freeze_time = 3;
+    private const float noise_radio_ratio = 0.1f;
+    private const float hand_spread_out_angle = 15;
+    private const float fist_angle = 70;
     private float originX;
     private float originY;
     private float originTime;
@@ -108,7 +111,7 @@ public class HandTrackingGraph : DemoGraph
             float currY = height / 2 + (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Ymin;
 
             // the filter to remove noise rect...
-            if (width >= 0.1 && height >= 0.1)
+            if (width >= noise_radio_ratio && height >= noise_radio_ratio)
             {
                 if (currState == handState.outScreen)
                 {
@@ -191,11 +194,13 @@ public class HandTrackingGraph : DemoGraph
                         float angle_ring = Vector2.Angle(vector1314, vector1416);
                         float angle_pinky = Vector2.Angle(vector1718, vector1820);
 
-                        if (angle_index <= 15 && angle_middle <= 15 && angle_ring <= 15 && angle_pinky <= 15)
+                        if (angle_index <= hand_spread_out_angle && angle_middle <= hand_spread_out_angle
+                            && angle_ring <= hand_spread_out_angle && angle_pinky <= hand_spread_out_angle)
                         {
                             //Debug.Log("finger_spread_out");
                         }
-                        else if (angle_index >= 90 && angle_middle >= 70 && angle_ring >= 70 && angle_ring >= 70 && angle_pinky >= 70)
+                        else if (angle_index >= fist_angle && angle_middle >= fist_angle 
+                            && angle_ring >= fist_angle && angle_pinky >= fist_angle)
                         {
                             //Debug.Log("fist");
                         }
