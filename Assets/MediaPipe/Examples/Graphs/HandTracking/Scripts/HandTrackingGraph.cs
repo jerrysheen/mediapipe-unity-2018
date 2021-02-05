@@ -15,7 +15,7 @@ public enum handState
 
 public enum moveDirection
 {
-    idle,
+    direction_idle,
     left,
     right,
     up,
@@ -50,11 +50,15 @@ public class HandTrackingGraph : DemoGraph
 
     private SidePacket sidePacket;
     public HandTrackingValue handTrackingValue;
+    private const float freeze_time = 3;
+    private const float noise_radio_ratio = 0.1f;
+    private const float hand_spread_out_angle = 15;
+    private const float fist_angle = 70;
     private float originX;
     private float originY;
     private float originTime;
     private handState currState = handState.idle;
-    private moveDirection currDirection = moveDirection.idle;
+    private moveDirection currDirection = moveDirection.direction_idle;
 
 
     public override Status StartRun()
@@ -94,7 +98,7 @@ public class HandTrackingGraph : DemoGraph
     public override string GetMark()
     {
         // if detect hands change state machine.
-        //Debug.Log(currDirection);
+        Debug.Log(currDirection);
 
         if (handTrackingValue != null && handTrackingValue.PalmDetections != null && handTrackingValue.PalmDetections.Count > 0)
         {
@@ -107,9 +111,27 @@ public class HandTrackingGraph : DemoGraph
             float currY = height / 2 + (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Ymin;
 
             // the filter to remove noise rect...
-            if (width >= 0.1 && height >= 0.1)
+            if (width >= noise_radio_ratio && height >= noise_radio_ratio)
             {
-                if (currState == handState.move)
+                if (currState == handState.outScreen)
+                {
+                    /*
+                     *   outScreen state.
+                     *   once we detect the hand show in screen, There will be two situation,
+                     *   1. first time came into the screen.
+                     *   2. the hand left screen because of the move command..
+                     *   For the first situation, We set a 3s frozon time,( just change the handState to move. and set time);
+                     *   For the second situation. We should not change the original time, 
+                     *   because it's an instant state, we don't need to update location data, the location will be modified inside move state.
+                     *   
+                     *   by combining this two situations, we need set a relative small time, (say frozen_time/2) to fit the both cases.
+                     */
+
+                    currState = handState.move;
+                    originTime = Time.time - freeze_time / 2;
+
+                }
+                else if (currState == handState.move)
                 {
                     /*
                      *  
@@ -121,12 +143,12 @@ public class HandTrackingGraph : DemoGraph
 
                     originX = currX;
                     originY = currY;
-                    if ((Time.time - originTime) > 3)
+                    if ((Time.time - originTime) > freeze_time)
                     {
                         // Frozon time end, change state to idle, ready to detect new action, Sync the time to current time.
                         currState = handState.idle;
                         originTime = Time.time;
-                        currDirection = moveDirection.idle;
+                        currDirection = moveDirection.direction_idle;
                     }
                     else
                     {
@@ -147,41 +169,42 @@ public class HandTrackingGraph : DemoGraph
 
                     // detect hand shape by calculate vector.
 
-                    NormalizedLandmarkList landmarks = handTrackingValue.HandLandmarkLists[0];
-                    Vector2 w1 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
-                    Vector2 w2 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
-                    Vector2[] cordinates = new Vector2[landmarks.Landmark.Count];
-                    for (int i = 0; i < cordinates.Length; i++)
-                    {
-                        cordinates[i] = new Vector2(landmarks.Landmark[i].X, landmarks.Landmark[i].Y);
-                    }
-                    Vector2 vector68 = cordinates[8] - cordinates[6];
-                    Vector2 vector56 = cordinates[6] - cordinates[5];
-                    Vector2 vector1012 = cordinates[12] - cordinates[10];
-                    Vector2 vector910 = cordinates[10] - cordinates[9];
-                    Vector2 vector1416 = cordinates[16] - cordinates[14];
-                    Vector2 vector1314 = cordinates[14] - cordinates[13];
-                    Vector2 vector1820 = cordinates[20] - cordinates[18];
-                    Vector2 vector1718 = cordinates[18] - cordinates[17];
+                    if (handTrackingValue != null && handTrackingValue.HandLandmarkLists != null && handTrackingValue.HandLandmarkLists.Count > 0) { 
+                        NormalizedLandmarkList landmarks = handTrackingValue.HandLandmarkLists[0];
+                        Vector2 w1 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
+                        Vector2 w2 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
+                        Vector2[] cordinates = new Vector2[landmarks.Landmark.Count];
+                        for (int i = 0; i < cordinates.Length; i++)
+                        {
+                            cordinates[i] = new Vector2(landmarks.Landmark[i].X, landmarks.Landmark[i].Y);
+                        }
+                        Vector2 vector68 = cordinates[8] - cordinates[6];
+                        Vector2 vector56 = cordinates[6] - cordinates[5];
+                        Vector2 vector1012 = cordinates[12] - cordinates[10];
+                        Vector2 vector910 = cordinates[10] - cordinates[9];
+                        Vector2 vector1416 = cordinates[16] - cordinates[14];
+                        Vector2 vector1314 = cordinates[14] - cordinates[13];
+                        Vector2 vector1820 = cordinates[20] - cordinates[18];
+                        Vector2 vector1718 = cordinates[18] - cordinates[17];
 
-                    float angle_index = Vector2.Angle(vector68, vector56);
-                    float angle_middle = Vector2.Angle(vector910, vector1012);
-                    float angle_ring = Vector2.Angle(vector1314, vector1416);
-                    float angle_pinky = Vector2.Angle(vector1718, vector1820);
+                        // the angle between some knuckles.
 
-                    Debug.Log(angle_index);
-                    Debug.Log(angle_middle);
-                    Debug.Log(angle_ring);
-                    Debug.Log(angle_pinky);
-                    if (angle_index <= 15 && angle_middle <= 15 && angle_ring <= 15 && angle_pinky <= 15)
-                    {
-                        Debug.Log("finger_spread_out");
-                    }
-                    else if (angle_index >= 90 && angle_middle >= 70 && angle_ring >= 70 && angle_ring >= 70 && angle_pinky >= 70)
-                    {
-                        Debug.Log("fist");
-                    }
+                        float angle_index = Vector2.Angle(vector68, vector56);
+                        float angle_middle = Vector2.Angle(vector910, vector1012);
+                        float angle_ring = Vector2.Angle(vector1314, vector1416);
+                        float angle_pinky = Vector2.Angle(vector1718, vector1820);
 
+                        if (angle_index <= hand_spread_out_angle && angle_middle <= hand_spread_out_angle
+                            && angle_ring <= hand_spread_out_angle && angle_pinky <= hand_spread_out_angle)
+                        {
+                            //Debug.Log("finger_spread_out");
+                        }
+                        else if (angle_index >= fist_angle && angle_middle >= fist_angle 
+                            && angle_ring >= fist_angle && angle_pinky >= fist_angle)
+                        {
+                            //Debug.Log("fist");
+                        }
+                    }
 
 
                     // calculate hand move direction.
@@ -225,7 +248,9 @@ public class HandTrackingGraph : DemoGraph
 
             }
         }
-
+        else {
+            currState = handState.outScreen;
+        }
         return null;
     }
 
