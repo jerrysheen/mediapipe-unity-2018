@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/jerrysheen/mediapipe-unity-2018/compare/v1.0.0...v1.2.0) (2021-02-05)
+
+
+### Features
+
+* add changelog file for property: the forward update is by homuler ([768232f](https://github.com/jerrysheen/mediapipe-unity-2018/commit/768232f594f0d0d4884f570ae0652f07f26da8f0))
+* add finger_spread_out and fist feature ([a069495](https://github.com/jerrysheen/mediapipe-unity-2018/commit/a069495de7fc4dc5b48de981466e82d0937f699f))
+* basic idel and move detection using minxy + widthxy < range ([283738c](https://github.com/jerrysheen/mediapipe-unity-2018/commit/283738ca9af917b731cecb091301dd41e7cd6d07))
+* direction recognition with 5s delaytime, ([7c891c2](https://github.com/jerrysheen/mediapipe-unity-2018/commit/7c891c2378a498d1e8e6c6483b31f8edd9c8f787))
+* now hand can leave screen and then enter ([b98d7f1](https://github.com/jerrysheen/mediapipe-unity-2018/commit/b98d7f15eeed869d6c30bff6767bfee52c40c4f8))
+
+
+### Bug Fixes
+
+* fix the .gitignore so there won't be two versions of it ([7d65fb2](https://github.com/jerrysheen/mediapipe-unity-2018/commit/7d65fb2cfe64ec01901aa1c6348a78ee749b4f49))
+
 ## [1.1.0](https://github.com/jerrysheen/mediapipe-unity-2018/compare/v1.0.0...v1.1.0) (2021-02-03)
 
 
