@@ -85,10 +85,9 @@ public class HandTrackingGraph : DemoGraph
 
     public override void RenderOutput(WebCamScreenController screenController, TextureFrame textureFrame)
     {
-        // 这里是能收到一个value值的
+
         this.handTrackingValue = FetchNextHandTrackingValue();
         RenderAnnotation(screenController, handTrackingValue);
-
         screenController.DrawScreen(textureFrame);
     }
 
@@ -96,17 +95,14 @@ public class HandTrackingGraph : DemoGraph
     {
         // if detect hands change state machine.
         //Debug.Log(currDirection);
-        //Debug.Log(Time.time);
+
         if (handTrackingValue != null && handTrackingValue.PalmDetections != null && handTrackingValue.PalmDetections.Count > 0)
         {
             // blue color one...
 
-            Queue<HandTrackingValue> idleOrMove = new Queue<HandTrackingValue>();
-            //
-            //Debug.Log(handTrackingValue.PalmDetections[0]);
             float width = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Width;
             float height = (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Height;
-
+            // center of the X and Y
             float currX = width / 2 + (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Xmin;
             float currY = height / 2 + (float)handTrackingValue.PalmDetections[0].LocationData.RelativeBoundingBox.Ymin;
 
@@ -114,63 +110,81 @@ public class HandTrackingGraph : DemoGraph
             if (width >= 0.1 && height >= 0.1)
             {
                 if (currState == handState.move)
-                { 
+                {
+                    /*
+                     *  
+                     *   move state
+                     *   we set a frozon time, within it the program won't detect any move you've down.
+                     *   but we will track your current position.
+                     *   Time.time return current program running time.  1.0000s,  2.38491s......
+                     */
+
+                    originX = currX;
+                    originY = currY;
                     if ((Time.time - originTime) > 3)
                     {
+                        // Frozon time end, change state to idle, ready to detect new action, Sync the time to current time.
                         currState = handState.idle;
                         originTime = Time.time;
-                        originX = currX;
-                        originY = currY;
                         currDirection = moveDirection.idle;
                     }
                     else
                     {
-                        //Debug.Log(Time.time - originTime);
+                        // Frozon time, do nothing here..
                     }
                 }
                 else if (currState == handState.idle)
                 {
-                    //Debug.Log("idle");
-                    // when idle, detect hand shape here:
-                    if (handTrackingValue != null && handTrackingValue.HandLandmarkLists != null && handTrackingValue.HandLandmarkLists.Count > 0)
+                    /*
+                     *  
+                     *   idle state
+                     *   In this state, we detect hand shape instantly, (hand spread out, fist)
+                     *   And we are ready to detect hand move direction (left, right, up, down)
+                     *   If we detect a long range move, we change state to idle, change hand position to move direction, and start frozon time.
+                     *   
+                     */
+
+
+                    // detect hand shape by calculate vector.
+
+                    NormalizedLandmarkList landmarks = handTrackingValue.HandLandmarkLists[0];
+                    Vector2 w1 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
+                    Vector2 w2 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
+                    Vector2[] cordinates = new Vector2[landmarks.Landmark.Count];
+                    for (int i = 0; i < cordinates.Length; i++)
                     {
-                        NormalizedLandmarkList landmarks = handTrackingValue.HandLandmarkLists[0];
-                        Vector2 w1 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
-                        Vector2 w2 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
-                        Vector2[] cordinates = new Vector2[landmarks.Landmark.Count];
-                        for (int i = 0; i < cordinates.Length; i++)
-                        {
-                            cordinates[i] = new Vector2(landmarks.Landmark[i].X, landmarks.Landmark[i].Y);
-                        }
-                        Vector2 vector68 = cordinates[8] - cordinates[6];
-                        Vector2 vector56 = cordinates[6] - cordinates[5];
-                        Vector2 vector1012 = cordinates[12] - cordinates[10];
-                        Vector2 vector910 = cordinates[10] - cordinates[9];
-                        Vector2 vector1416 = cordinates[16] - cordinates[14];
-                        Vector2 vector1314 = cordinates[14] - cordinates[13];
-                        Vector2 vector1820 = cordinates[20] - cordinates[18];
-                        Vector2 vector1718 = cordinates[18] - cordinates[17];
+                        cordinates[i] = new Vector2(landmarks.Landmark[i].X, landmarks.Landmark[i].Y);
+                    }
+                    Vector2 vector68 = cordinates[8] - cordinates[6];
+                    Vector2 vector56 = cordinates[6] - cordinates[5];
+                    Vector2 vector1012 = cordinates[12] - cordinates[10];
+                    Vector2 vector910 = cordinates[10] - cordinates[9];
+                    Vector2 vector1416 = cordinates[16] - cordinates[14];
+                    Vector2 vector1314 = cordinates[14] - cordinates[13];
+                    Vector2 vector1820 = cordinates[20] - cordinates[18];
+                    Vector2 vector1718 = cordinates[18] - cordinates[17];
 
-                        float angle_index = Vector2.Angle(vector68, vector56);
-                        float angle_middle = Vector2.Angle(vector910, vector1012);
-                        float angle_ring = Vector2.Angle(vector1314, vector1416);
-                        float angle_pinky = Vector2.Angle(vector1718, vector1820);
+                    float angle_index = Vector2.Angle(vector68, vector56);
+                    float angle_middle = Vector2.Angle(vector910, vector1012);
+                    float angle_ring = Vector2.Angle(vector1314, vector1416);
+                    float angle_pinky = Vector2.Angle(vector1718, vector1820);
 
-                        Debug.Log(angle_index);
-                        Debug.Log(angle_middle);
-                        Debug.Log(angle_ring);
-                        Debug.Log(angle_pinky);
-                        if (angle_index <= 15 && angle_middle <= 15 && angle_ring <= 15 && angle_pinky <= 15) {
-                            Debug.Log("finger_spread_out");
-                        }
-                        else if (angle_index >= 90 && angle_middle >= 70 && angle_ring >= 70 && angle_ring >= 70 && angle_pinky >= 70)
-                        {
-                            Debug.Log("fist");
-                        }
-
+                    Debug.Log(angle_index);
+                    Debug.Log(angle_middle);
+                    Debug.Log(angle_ring);
+                    Debug.Log(angle_pinky);
+                    if (angle_index <= 15 && angle_middle <= 15 && angle_ring <= 15 && angle_pinky <= 15)
+                    {
+                        Debug.Log("finger_spread_out");
+                    }
+                    else if (angle_index >= 90 && angle_middle >= 70 && angle_ring >= 70 && angle_ring >= 70 && angle_pinky >= 70)
+                    {
+                        Debug.Log("fist");
                     }
 
 
+
+                    // calculate hand move direction.
                     float diffX = currX - originX;
                     float diffY = currY - originY;
                     if (Mathf.Abs(diffX) > 0.15 || Mathf.Abs(originY - currY) > 0.15)
@@ -210,12 +224,6 @@ public class HandTrackingGraph : DemoGraph
                 }
 
             }
-        }
-
-        if (handTrackingValue != null && handTrackingValue.HandLandmarkLists != null && handTrackingValue.HandLandmarkLists.Count > 0)
-        {
-            //Debug.Log(handTrackingValue.HandLandmarkLists[0]);
-            return handTrackingValue.HandLandmarkLists[0].ToString();
         }
 
         return null;
