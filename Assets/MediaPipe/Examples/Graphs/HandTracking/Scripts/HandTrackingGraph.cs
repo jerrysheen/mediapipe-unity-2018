@@ -4,15 +4,20 @@ using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
 
+
 public enum handState
 {
     idle,
     move,
-    fist,
-    finger_spread_out,
     outScreen
 }
 
+public enum handShape
+{
+    none,
+    fist,
+    finger_spread_out,
+}
 public enum moveDirection
 {
     direction_idle,
@@ -50,6 +55,7 @@ public class HandTrackingGraph : DemoGraph
 
     private SidePacket sidePacket;
     public HandTrackingValue handTrackingValue;
+    private List<NormalizedLandmarkList> handLandmarks;
     private const float freeze_time = 3;
     private const float noise_radio_ratio = 0.1f;
     private const float hand_spread_out_angle = 15;
@@ -58,8 +64,11 @@ public class HandTrackingGraph : DemoGraph
     private float originY;
     private float originTime;
     private handState currState = handState.idle;
+    private handShape currShape = handShape.none;
     private moveDirection currDirection = moveDirection.direction_idle;
-
+    private string handShapeDirectionMessage = "mttp://HandMessage/Status/";
+    // decide how to send landmark
+    private string handsLandmarkMessage = "mttp://HandMesaage/HandLandMarkMessage/Status/";
 
     public override Status StartRun()
     {
@@ -91,6 +100,7 @@ public class HandTrackingGraph : DemoGraph
     {
 
         this.handTrackingValue = FetchNextHandTrackingValue();
+       // this.handLandmarks = handTrackingValue.HandLandmarkLists
         RenderAnnotation(screenController, handTrackingValue);
         screenController.DrawScreen(textureFrame);
     }
@@ -98,7 +108,7 @@ public class HandTrackingGraph : DemoGraph
     public override string GetMark()
     {
         // if detect hands change state machine.
-        Debug.Log(currDirection);
+        //Debug.Log(currDirection);
 
         if (handTrackingValue != null && handTrackingValue.PalmDetections != null && handTrackingValue.PalmDetections.Count > 0)
         {
@@ -113,6 +123,22 @@ public class HandTrackingGraph : DemoGraph
             // the filter to remove noise rect...
             if (width >= noise_radio_ratio && height >= noise_radio_ratio)
             {
+                // send landmark here:
+                if (handTrackingValue.HandLandmarkLists != null && handTrackingValue.HandLandmarkLists.Count > 0)
+                {
+                    NormalizedLandmarkList landmarks = handTrackingValue.HandLandmarkLists[0];
+                    for (int i = 0; i < landmarks.Landmark.Count; i++)
+                    {
+                        float tempX, tempY, tempZ;
+                        tempX = landmarks.Landmark[i].X;
+                        tempY = landmarks.Landmark[i].Y;
+                        tempZ = landmarks.Landmark[i].Z;
+                        string temp = handsLandmarkMessage + "X=&" + tempX + "Y=&" + tempY + "Z=&" + tempZ;
+                        MessageMgr.GetIns().Dispatch("HandMessage", temp);
+                    }
+                    //Debug.Log(landmarks.Landmark[0].X + "  ,  " + landmarks.Landmark[0].Y);
+                }
+
                 if (currState == handState.outScreen)
                 {
                     /*
@@ -169,10 +195,12 @@ public class HandTrackingGraph : DemoGraph
 
                     // detect hand shape by calculate vector.
 
-                    if (handTrackingValue != null && handTrackingValue.HandLandmarkLists != null && handTrackingValue.HandLandmarkLists.Count > 0) { 
+                    if (handTrackingValue != null && handTrackingValue.HandLandmarkLists != null && handTrackingValue.HandLandmarkLists.Count > 0)
+                    {
+
+
+
                         NormalizedLandmarkList landmarks = handTrackingValue.HandLandmarkLists[0];
-                        Vector2 w1 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
-                        Vector2 w2 = new Vector2(landmarks.Landmark[8].X, landmarks.Landmark[8].Y);
                         Vector2[] cordinates = new Vector2[landmarks.Landmark.Count];
                         for (int i = 0; i < cordinates.Length; i++)
                         {
@@ -198,12 +226,21 @@ public class HandTrackingGraph : DemoGraph
                             && angle_ring <= hand_spread_out_angle && angle_pinky <= hand_spread_out_angle)
                         {
                             //Debug.Log("finger_spread_out");
+                            currShape = handShape.finger_spread_out;
+
                         }
-                        else if (angle_index >= fist_angle && angle_middle >= fist_angle 
+                        else if (angle_index >= fist_angle && angle_middle >= fist_angle
                             && angle_ring >= fist_angle && angle_pinky >= fist_angle)
                         {
                             //Debug.Log("fist");
+                            currShape = handShape.fist;
                         }
+                        else
+                        {
+                            // none shape 
+                            currShape = handShape.none;
+                        }
+
                     }
 
 
@@ -242,13 +279,18 @@ public class HandTrackingGraph : DemoGraph
                                 currDirection = moveDirection.up;
                             }
                         }
-
                     }
+                    string temp = handShapeDirectionMessage + "Gesture=&" + currShape + "Direction=&" + currDirection;
+                    MessageMgr.GetIns().Dispatch("HandMessage", temp);
+                    Debug.Log(currShape + "  ,  " + currDirection);
                 }
+
+
 
             }
         }
-        else {
+        else
+        {
             currState = handState.outScreen;
         }
         return null;
