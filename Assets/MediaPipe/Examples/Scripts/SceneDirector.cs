@@ -12,9 +12,9 @@ using Directory = System.IO.Directory;
 
 public class SceneDirector : MonoBehaviour {
   [SerializeField] bool useGPU = true;
-  [SerializeField] GameObject graphTrigger;
+  //[SerializeField] GameObject graphTrigger;
 
-    readonly object graphLock = new object();
+  readonly object graphLock = new object();
   WebCamDevice? webCamDevice;
   Coroutine cameraSetupCoroutine;
   GameObject graphPrefab;
